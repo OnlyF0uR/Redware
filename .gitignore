@@ -1,0 +1,8 @@
+# Global
+.vscode/
+
+# Malware
+
+# Backend
+backend/obj
+backend/app

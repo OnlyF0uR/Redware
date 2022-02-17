@@ -1,2 +1,2 @@
 # Redware
-Red proof-of-concept Pythonic Tool made using Python and C.
+Proof-of-concept pythonic malware + command and control (backend) in C.
