@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
   http_listen("8080", NULL, .on_request = on_request, .log = 1);
   fio_start(.threads = 1);
 
+  // Prevent scope collaps (program exit)
   pthread_join(thread_id, NULL);
 
   return 0;
@@ -70,7 +71,7 @@ void on_request(http_s *req) {
           tmp = json_object_new_string(text);
           json_object_object_add(object, "text", tmp);
 
-          tmp = NULL;
+          tmp = NULL; // No dangling my friend 
 
           // Send the post request
           send_message(json_object_to_json_string(object));
@@ -78,6 +79,7 @@ void on_request(http_s *req) {
           json_object_object_del(object, "chat_id");
           json_object_object_del(object, "text");
           free(object);
+          free(tmp);
         }
 
         fiobj_free(textKey);
