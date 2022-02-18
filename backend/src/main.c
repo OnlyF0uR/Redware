@@ -1,18 +1,13 @@
 #include <stdio.h>
 #include <pthread.h>
-#include <unistd.h>
 #include <string.h>
 #include <curl/curl.h>
 #include <json-c/json.h>
 #include "http.h"
 #include "fiobj.h"
+#include "telegram.h"
 
 void on_request(http_s *request);
-void *handle_cmds();
-
-FIOBJ HTTP_HEADER_X_DATA;
-
-char *base_uri;
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -20,22 +15,16 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  base_uri = malloc((28 + strlen(argv[1]) + 1) * sizeof(char));
-  strcpy(base_uri, "https://api.telegram.org/bot");
-  strcat(base_uri, argv[1]);
+  // Construct the default uri
+  init_telegram(argv[1]);
 
-  // Run the bot on different thread
+  // Run the "command listener" on a different thread
   pthread_t thread_id;
   pthread_create(&thread_id, NULL, handle_cmds, NULL);
 
-  // Allocate some freq. used values
-  HTTP_HEADER_X_DATA = fiobj_str_new("X-Data", 6);
   // Start listening, (Port, Binding(NULL = 0.0.0.0))
   http_listen("8080", NULL, .on_request = on_request, .log = 1);
-  // Start the actual server
   fio_start(.threads = 1);
-  // Deallocate the freq. used values
-  fiobj_free(HTTP_HEADER_X_DATA);
 
   pthread_join(thread_id, NULL);
 
@@ -51,6 +40,7 @@ void on_request(http_s *req) {
     // TODO: Command query?
   }
   else if (strcmp(method, "POST") == 0) {
+    // https://core.telegram.org/bots/api#sendmessage
     if (strcmp(path, "/data/text") == 0) {
       char* json = fiobj_obj2cstr(req->body).data;
 
@@ -61,65 +51,32 @@ void on_request(http_s *req) {
       }
 
       if (FIOBJ_TYPE_IS(obj, FIOBJ_T_HASH)) {
-        // Text
         FIOBJ textKey = fiobj_str_new("text", 4);
+        
         if (fiobj_hash_get(obj, textKey)) {
+          // Get the text for the message
           char* text = fiobj_obj2cstr(fiobj_hash_get(obj, textKey)).data;
 
-          // Send the curl request
-          CURL *curl;
-          CURLcode res;
+          // Handle the json part
+          struct json_object *object, *tmp;
+          
+          object = json_object_new_object();
 
-          curl = curl_easy_init();
+          tmp = json_object_new_int(-642850803);
+          json_object_object_add(object, "chat_id", tmp);
+          tmp = json_object_new_string(text);
+          json_object_object_add(object, "text", tmp);
 
-          if (curl) {
-            // JSON Object (https://core.telegram.org/bots/api#sendmessage)
-            struct json_object *object, *tmp;
+          tmp = NULL;
 
-            object = json_object_new_object();
-            
-            tmp = json_object_new_int(-642850803);
-            json_object_object_add(object, "chat_id", tmp);
-            tmp = json_object_new_string(text);
-            json_object_object_add(object, "text", tmp);
-
-            tmp = NULL;
-
-            // Telegram URI
-            char* uri = NULL;
-            uri = malloc((strlen(base_uri) + 12 + 1) * sizeof(char));
-            strcpy(uri, base_uri);
-            strcat(uri, "/sendMessage");
-
-            printf("%s", json_object_to_json_string(object));
-            fflush(stdout);
-
-            struct curl_slist *headers = NULL;
-            headers = curl_slist_append(headers, "Accept: application/json");
-            headers = curl_slist_append(headers, "Content-Type: application/json");
-            headers = curl_slist_append(headers, "charsets: utf-8");
-
-            curl_easy_setopt(curl, CURLOPT_URL, uri);
-            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_object_to_json_string(object));
-
-            res = curl_easy_perform(curl);
-
-            if (res != CURLE_OK) {
-              fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            }
-
-            curl_easy_cleanup(curl);
-            json_object_object_del(object, "chat_id");
-            json_object_object_del(object, "text");
-            free(object);
-          }
-
-          curl_global_cleanup();
+          // Send the post request
+          send_message(json_object_to_json_string(object));
+          // Cleanup
+          json_object_object_del(object, "chat_id");
+          json_object_object_del(object, "text");
+          free(object);
         }
 
-        // Cleanup
         fiobj_free(textKey);
       } else {
         fprintf(stderr, "Invalid JSON-body.\n");
@@ -131,12 +88,4 @@ void on_request(http_s *req) {
       // sendPhoto
     }
   }
-}
-
-void *handle_cmds() {
-  // TODO: Add function here
-
-  // printf("%s\n", base_uri);
-  // fflush(stdout);
-  pthread_exit(NULL);
 }
