@@ -12,7 +12,7 @@ FIOBJ HTTP_HEADER_X_DATA;
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
-    fprintf(stderr, "Usage: %s <TelegramToken>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <BotToken>\n", argv[0]);
     return 1;
   }
 
