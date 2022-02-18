@@ -2,13 +2,17 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
+#include <curl/curl.h>
+#include <json-c/json.h>
 #include "http.h"
 #include "fiobj.h"
 
 void on_request(http_s *request);
-void *handle_cmds(void *arg);
+void *handle_cmds();
 
 FIOBJ HTTP_HEADER_X_DATA;
+
+char *base_uri;
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -16,9 +20,13 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  base_uri = malloc((28 + strlen(argv[1]) + 1) * sizeof(char));
+  strcpy(base_uri, "https://api.telegram.org/bot");
+  strcat(base_uri, argv[1]);
+
   // Run the bot on different thread
   pthread_t thread_id;
-  pthread_create(&thread_id, NULL, handle_cmds, argv[1]);
+  pthread_create(&thread_id, NULL, handle_cmds, NULL);
 
   // Allocate some freq. used values
   HTTP_HEADER_X_DATA = fiobj_str_new("X-Data", 6);
@@ -53,31 +61,73 @@ void on_request(http_s *req) {
       }
 
       if (FIOBJ_TYPE_IS(obj, FIOBJ_T_HASH)) {
-        // Title
-        FIOBJ titleKey = fiobj_str_new("title", 5);
-        if (fiobj_hash_get(obj, titleKey)) {
-          char* title = fiobj_obj2cstr(fiobj_hash_get(obj, titleKey)).data;
-          printf("%s\n", title);
+        // Text
+        FIOBJ textKey = fiobj_str_new("text", 4);
+        if (fiobj_hash_get(obj, textKey)) {
+          char* text = fiobj_obj2cstr(fiobj_hash_get(obj, textKey)).data;
 
-          // TODO: sendMessage for telegram
-        }
+          // Send the curl request
+          CURL *curl;
+          CURLcode res;
 
-        // Desc
-        FIOBJ descKey = fiobj_str_new("description", 11);
-        if (fiobj_hash_get(obj, descKey)) {
-          char* desc = fiobj_obj2cstr(fiobj_hash_get(obj, descKey)).data;
-          printf("%s\n", desc);
+          curl = curl_easy_init();
 
-          // TODO: sendMessage for telegram
+          if (curl) {
+            // JSON Object (https://core.telegram.org/bots/api#sendmessage)
+            struct json_object *object, *tmp;
+
+            object = json_object_new_object();
+            
+            tmp = json_object_new_int(-642850803);
+            json_object_object_add(object, "chat_id", tmp);
+            tmp = json_object_new_string(text);
+            json_object_object_add(object, "text", tmp);
+
+            tmp = NULL;
+
+            // Telegram URI
+            char* uri = NULL;
+            uri = malloc((strlen(base_uri) + 12 + 1) * sizeof(char));
+            strcpy(uri, base_uri);
+            strcat(uri, "/sendMessage");
+
+            printf("%s", json_object_to_json_string(object));
+            fflush(stdout);
+
+            struct curl_slist *headers = NULL;
+            headers = curl_slist_append(headers, "Accept: application/json");
+            headers = curl_slist_append(headers, "Content-Type: application/json");
+            headers = curl_slist_append(headers, "charsets: utf-8");
+
+            curl_easy_setopt(curl, CURLOPT_URL, uri);
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_object_to_json_string(object));
+            // curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"chat_id\":-642850803, \"text\": \"Awesome description mate\"}");
+            // curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+
+            res = curl_easy_perform(curl);
+
+            if (res != CURLE_OK) {
+              fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+            }
+
+            curl_easy_cleanup(curl);
+            json_object_object_del(object, "chat_id");
+            json_object_object_del(object, "text");
+            free(object);
+          }
+
+          curl_global_cleanup();
         }
 
         // Cleanup
-        fiobj_free(descKey);
-        fiobj_free(titleKey);
-        fiobj_free(obj);
+        fiobj_free(textKey);
       } else {
         fprintf(stderr, "Invalid JSON-body.\n");
       }
+
+      fiobj_free(obj);
     }
     else if (strcmp(path, "/data/picture") == 0) {
       // sendPhoto
@@ -85,18 +135,10 @@ void on_request(http_s *req) {
   }
 }
 
-void *handle_cmds(void *arg) {
-  char *token = (char*) arg;
-  char *dest = malloc((25 + strlen(token) + 1) * sizeof(char));
-
-  strcpy(dest, "https://api.telegram.org/");
-  strcat(dest, token);
-
+void *handle_cmds() {
   // TODO: Add function here
 
-  // printf("%s\n", dest);
+  // printf("%s\n", base_uri);
   // fflush(stdout);
-
-  free(dest);
   pthread_exit(NULL);
 }
