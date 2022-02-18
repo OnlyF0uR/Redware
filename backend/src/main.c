@@ -103,8 +103,6 @@ void on_request(http_s *req) {
             curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_object_to_json_string(object));
-            // curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"chat_id\":-642850803, \"text\": \"Awesome description mate\"}");
-            // curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 
             res = curl_easy_perform(curl);
 
