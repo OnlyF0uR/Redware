@@ -9,14 +9,17 @@
 
 void on_request(http_s *request);
 
+int chatId;
+
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <BotToken>\n", argv[0]);
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <BotToken> <ChatId>\n", argv[0]);
     return 1;
   }
 
   // Construct the default uri
   init_telegram(argv[1]);
+  chatId = atoi(argv[2]);
 
   // Run the "command listener" on a different thread
   pthread_t thread_id;
@@ -62,7 +65,7 @@ void on_request(http_s *req) {
           
           object = json_object_new_object();
 
-          tmp = json_object_new_int(-642850803);
+          tmp = json_object_new_int(chatId);
           json_object_object_add(object, "chat_id", tmp);
           tmp = json_object_new_string(text);
           json_object_object_add(object, "text", tmp);
