@@ -9,7 +9,7 @@
 
 void on_request(http_s *request);
 
-int chatId;
+int chat_id;
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
   // Construct the default uri
   init_telegram(argv[1]);
-  chatId = atoi(argv[2]);
+  chat_id = atoi(argv[2]);
 
   // Run the "command listener" on a different thread
   pthread_t thread_id;
@@ -55,18 +55,18 @@ void on_request(http_s *req) {
       }
 
       if (FIOBJ_TYPE_IS(obj, FIOBJ_T_HASH)) {
-        FIOBJ textKey = fiobj_str_new("text", 4);
+        FIOBJ text_key = fiobj_str_new("text", 4);
         
-        if (fiobj_hash_get(obj, textKey)) {
+        if (fiobj_hash_get(obj, text_key)) {
           // Get the text for the message
-          char* text = fiobj_obj2cstr(fiobj_hash_get(obj, textKey)).data;
+          char* text = fiobj_obj2cstr(fiobj_hash_get(obj, text_key)).data;
 
           // Handle the json part
           struct json_object *object, *tmp;
           
           object = json_object_new_object();
 
-          tmp = json_object_new_int(chatId);
+          tmp = json_object_new_int(chat_id);
           json_object_object_add(object, "chat_id", tmp);
           tmp = json_object_new_string(text);
           json_object_object_add(object, "text", tmp);
@@ -82,7 +82,7 @@ void on_request(http_s *req) {
           free(tmp);
         }
 
-        fiobj_free(textKey);
+        fiobj_free(text_key);
       } else {
         fprintf(stderr, "Invalid JSON-body.\n");
       }

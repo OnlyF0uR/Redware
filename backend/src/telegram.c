@@ -7,6 +7,11 @@ char *base_uri;
 
 void init_telegram(char* token) {
     base_uri = malloc((28 + strlen(token) + 1) * sizeof(char));
+    if (!base_uri) {
+      printf("Could not allocate memory to the base_uri variable.\n");
+      fflush(stdout);
+      exit(1);
+    }
     strcpy(base_uri, "https://api.telegram.org/bot");
     strcat(base_uri, token);
 }
@@ -18,8 +23,12 @@ void send_message(const char* json_string) {
   curl = curl_easy_init();
   if (curl) {
     // Telegram URI
-    char *uri = NULL;
-    uri = malloc((strlen(base_uri) + 12 + 1) * sizeof(char));
+    char *uri = malloc((strlen(base_uri) + 12 + 1) * sizeof(char));
+    if (!uri) {
+      printf("Could not allocate memory to the uri variable.\n");
+      fflush(stdout);
+      exit(1);
+    }
     strcpy(uri, base_uri);
     strcat(uri, "/sendMessage");
 
@@ -41,8 +50,8 @@ void send_message(const char* json_string) {
     }
 
     curl_easy_cleanup(curl);
+    free(uri);
   }
-
   curl_global_cleanup();
   fflush(stdout); // Flush for curl outpu
 }
