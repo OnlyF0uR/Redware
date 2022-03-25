@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  // Construct the default uri
+  // Initiate telegram
   init_telegram(argv[1]);
   chat_id = atoi(argv[2]);
 
@@ -27,6 +27,8 @@ int main(int argc, char *argv[]) {
 
   // Start listening, (Port, Binding(NULL = 0.0.0.0))
   http_listen("8080", NULL, .on_request = on_request, .log = 1);
+
+  // Start the listener event loop
   fio_start(.threads = 1);
 
   // Prevent scope collaps (program exit)
@@ -41,7 +43,7 @@ void on_request(http_s *req) {
 
   // Check if the request is a get
   if (strcmp(method, "GET") == 0) {
-    // TODO: Command query?
+    // TODO: Possibly get some data?
   }
   else if (strcmp(method, "POST") == 0) {
     // https://core.telegram.org/bots/api#sendmessage
