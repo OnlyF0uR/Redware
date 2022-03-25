@@ -91,6 +91,11 @@ void on_request(http_s *req) {
     }
     else if (strcmp(path, "/data/picture") == 0) {
       // sendPhoto
+      char* json = fiobj_obj2cstr(req->body).data;
+
+      // TODO:
+      // Validate the body
+      // Process the actual image
     }
   }
 }

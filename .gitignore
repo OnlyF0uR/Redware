@@ -2,6 +2,7 @@
 .vscode/
 
 # Malware
+malware/__pycache__
 
 # Backend
 backend/obj
