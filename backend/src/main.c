@@ -43,7 +43,43 @@ void on_request(http_s *req) {
 
   // Check if the request is a get
   if (strcmp(method, "GET") == 0) {
-    // TODO: Possibly get some data?
+    if (strcmp(path, "/cmds") == 0) {
+      char *query = fiobj_obj2cstr(req->query).data;
+
+      char *kw = strtok(query, "=");
+      if (kw == NULL) {
+        const char *res = error_res("Failed to parse query keyword.");
+        http_send_body(req, res, strlen(res));
+        return;
+      }
+
+      char *vl = strtok(NULL, "=");
+      if (vl == NULL) {
+        const char *res = error_res("Failed to parse query value.");
+        http_send_body(req, res, strlen(res));
+        return;
+      }
+
+      if (strcmp(kw, "fp") == 0) {
+        printf("Requesting commands for : %s\n", vl);
+
+        // Create main object
+        json_object *obj = json_object_new_object();
+        
+        // Create sub data
+        json_object *ok = json_object_new_boolean(1);
+        json_object *cmds = json_object_new_array();
+
+        // TODO: Add items to the array
+        // json_object_array_add
+
+        json_object_object_add(obj, "ok", ok);
+        json_object_object_add(obj, "cmds", cmds);
+
+        const char *res = json_object_to_json_string(obj);
+        http_send_body(req, res, strlen(res));
+      }
+    }
   }
   else if (strcmp(method, "POST") == 0) {
     // https://core.telegram.org/bots/api#sendmessage
