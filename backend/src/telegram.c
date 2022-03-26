@@ -57,7 +57,7 @@ void send_message(const char* json_string) {
     res = curl_easy_perform(curl);
 
     if (res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+      fprintf(stderr, "send_message() failed: %s\n", curl_easy_strerror(res));
     }
 
     curl_easy_cleanup(curl);
@@ -109,7 +109,7 @@ void fetch_updates(json_object **buffer) {
     res = curl_easy_perform(curl);
 
     if (res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+      fprintf(stderr, "fetch_updates() failed: %s\n", curl_easy_strerror(res));
     } else {
       *buffer = json_tokener_parse(chunk.memory);
     }
@@ -163,7 +163,7 @@ void* handle_cmds() {
       }
     }
 
-    sleep(1);
+    sleep(2);
   }
 
   printf("INFO: Shutting down command thread.\n");
