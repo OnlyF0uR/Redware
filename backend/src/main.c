@@ -65,7 +65,7 @@ void on_request(http_s *req) {
 
         // Create main object
         json_object *obj = json_object_new_object();
-        
+
         // Create sub data
         json_object *ok = json_object_new_boolean(1);
         json_object *cmds = json_object_new_array();
@@ -84,7 +84,7 @@ void on_request(http_s *req) {
   else if (strcmp(method, "POST") == 0) {
     // https://core.telegram.org/bots/api#sendmessage
     if (strcmp(path, "/data/text") == 0) {
-      char* json = fiobj_obj2cstr(req->body).data;
+      char *json = fiobj_obj2cstr(req->body).data;
 
       FIOBJ obj = FIOBJ_INVALID;
       size_t consumed = fiobj_json2obj(&obj, json, strlen(json));
@@ -97,7 +97,7 @@ void on_request(http_s *req) {
         
         if (fiobj_hash_get(obj, text_key)) {
           // Get the text for the message
-          char* text = fiobj_obj2cstr(fiobj_hash_get(obj, text_key)).data;
+          char *text = fiobj_obj2cstr(fiobj_hash_get(obj, text_key)).data;
 
           // Handle the json part
           struct json_object *object, *tmp;

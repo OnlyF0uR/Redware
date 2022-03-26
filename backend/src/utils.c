@@ -4,11 +4,8 @@
  
 #include <curl/curl.h>
 #include <json-c/json.h>
- 
-struct MemoryStruct {
-  char *memory;
-  size_t size;
-};
+
+#include "utils.h"
  
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
   size_t realsize = size * nmemb;
