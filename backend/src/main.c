@@ -131,18 +131,45 @@ void on_request(http_s *req) {
       FIOBJ obj = FIOBJ_INVALID;
       size_t consumed = fiobj_json2obj(&obj, json, strlen(json));
       if (!consumed || !obj) {
-        json_object *obj = json_object_new_object();
+        struct json_object *obj, *ok, *rsn;
 
-        json_object *ok = json_object_new_boolean(0);
-        json_object *rsn = json_object_new_string("Failed to parse the body.");
+        obj = json_object_new_object();
+        ok = json_object_new_boolean(0);
+        rsn = json_object_new_string("Failed to parse body.");
+
         json_object_object_add(obj, "ok", ok);
         json_object_object_add(obj, "reason", rsn);
 
         char *res = json_object_to_json_string(obj);
         http_send_body(req, res, strlen(res));
+
+        json_object_put(obj);
       } else {
         if (FIOBJ_TYPE_IS(obj, FIOBJ_T_HASH)) {
           FIOBJ text_key = fiobj_str_new("text", 4);
+          FIOBJ id_key = fiobj_str_new("fp", 2);
+
+          if (fiobj_hash_get(obj, id_key)) {
+            char *fp = fiobj_obj2cstr(fiobj_hash_get(obj, id_key)).data;
+            if (strlen(fp) != 6) {
+            struct json_object *obj, *ok, *rsn;
+
+              obj = json_object_new_object();
+              ok = json_object_new_boolean(0);
+              rsn = json_object_new_string("Malicious fingerprint was inserted.");
+
+              json_object_object_add(obj, "ok", ok);
+              json_object_object_add(obj, "reason", rsn);
+
+              char *res = json_object_to_json_string(obj);
+              http_send_body(req, res, strlen(res));
+
+              json_object_put(obj);
+              return;
+            }
+
+            proc_data_msg(&chat_id, fp);
+          }
 
           if (fiobj_hash_get(obj, text_key)) {
             struct json_object *object, *tmp;
@@ -164,6 +191,7 @@ void on_request(http_s *req) {
           }
 
           fiobj_free(text_key);
+          fiobj_free(id_key);
         } else {
           struct json_object *obj, *ok, *rsn;
 
@@ -204,11 +232,33 @@ void on_request(http_s *req) {
         json_object_put(obj);
       } else {
         if (FIOBJ_TYPE_IS(obj, FIOBJ_T_HASH)) {
-          FIOBJ text_key = fiobj_str_new("img", 3);
+          FIOBJ img_key = fiobj_str_new("img", 3);
+          FIOBJ id_key = fiobj_str_new("fp", 2);
 
-          if (fiobj_hash_get(obj, text_key)) {
+          if (fiobj_hash_get(obj, id_key)) {
+            char *fp = fiobj_obj2cstr(fiobj_hash_get(obj, id_key)).data;
+            if (strlen(fp) != 6) {
+              struct json_object *obj, *ok, *rsn;
+
+              obj = json_object_new_object();
+              ok = json_object_new_boolean(0);
+              rsn = json_object_new_string("Malicious fingerprint was inserted.");
+
+              json_object_object_add(obj, "ok", ok);
+              json_object_object_add(obj, "reason", rsn);
+
+              char *res = json_object_to_json_string(obj);
+              http_send_body(req, res, strlen(res));
+
+              json_object_put(obj);
+            }
+
+            proc_data_msg(&chat_id, fp);
+          }
+
+          if (fiobj_hash_get(obj, img_key)) {
             // Get the text for the message
-            char *text = fiobj_obj2cstr(fiobj_hash_get(obj, text_key)).data;
+            char *text = fiobj_obj2cstr(fiobj_hash_get(obj, img_key)).data;
 
             // Handle the json part
             struct json_object *object, *tmp;
@@ -223,13 +273,13 @@ void on_request(http_s *req) {
             tmp = NULL;  // No dangling my friend
 
             // Send the post request
-            send_telegram_post("/sendPhoto",
-                               json_object_to_json_string(object));
+            send_telegram_post("/sendPhoto", json_object_to_json_string(object));
 
             json_object_put(object);
           }
 
-          fiobj_free(text_key);
+          fiobj_free(img_key);
+          fiobj_free(id_key);
         } else {
           struct json_object *obj, *ok, *rsn;
 
