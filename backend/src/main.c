@@ -152,7 +152,7 @@ void on_request(http_s *req) {
           if (fiobj_hash_get(obj, id_key)) {
             char *fp = fiobj_obj2cstr(fiobj_hash_get(obj, id_key)).data;
             if (strlen(fp) != 6) {
-            struct json_object *obj, *ok, *rsn;
+              struct json_object *obj, *ok, *rsn;
 
               obj = json_object_new_object();
               ok = json_object_new_boolean(0);
