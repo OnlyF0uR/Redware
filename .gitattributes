@@ -1,1 +1,1 @@
-backend/lib/* linguist-vendored
+backend/lib/** linguist-vendored
