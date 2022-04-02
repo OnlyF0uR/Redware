@@ -1,17 +1,15 @@
 #ifndef CMDS_DOT_H
 #define CMDS_DOT_H
 
-typedef struct
-{
-    char *key;
-    char *value;
+typedef struct {
+  char *key;
+  char *value;
 } HashItem;
 
-typedef struct
-{
-    HashItem **items;
-    int size;
-    int count;
+typedef struct {
+  HashItem **items;
+  int size;
+  int count;
 } HashTable;
 
 HashTable *create_table();
