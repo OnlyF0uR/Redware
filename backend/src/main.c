@@ -114,6 +114,8 @@ void on_request(http_s *req) {
         // Write the commands to the object
         write_commands(cmds, vl);
 
+        consume_command(vl);
+
         json_object_object_add(obj, "ok", ok);
         json_object_object_add(obj, "cmds", cmds);
 
