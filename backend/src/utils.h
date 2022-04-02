@@ -1,6 +1,8 @@
 #ifndef UTILS_DOT_H
 #define UTILS_DOT_H
 
+#include <stddef.h>
+
 struct MemoryStruct {
   char *memory;
   size_t size;

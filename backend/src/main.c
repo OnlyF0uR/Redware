@@ -59,8 +59,6 @@ void on_request(http_s *req) {
         http_send_body(req, res, strlen(res));
 
         json_object_put(obj);
-        json_object_put(ok);
-        json_object_put(rsn);
         return;
       }
 
@@ -81,8 +79,6 @@ void on_request(http_s *req) {
         http_send_body(req, res, strlen(res));
 
         json_object_put(obj);
-        json_object_put(ok);
-        json_object_put(rsn);
         return;
       }
 
@@ -101,8 +97,6 @@ void on_request(http_s *req) {
         http_send_body(req, res, strlen(res));
 
         json_object_put(obj);
-        json_object_put(ok);
-        json_object_put(rsn);
         return;
       }
 
@@ -118,7 +112,7 @@ void on_request(http_s *req) {
         cmds = json_object_new_array();
 
         // Write the commands to the object
-        write_commands(cmds);
+        write_commands(cmds, vl);
 
         json_object_object_add(obj, "ok", ok);
         json_object_object_add(obj, "cmds", cmds);
@@ -127,8 +121,6 @@ void on_request(http_s *req) {
         http_send_body(req, res, strlen(res));
 
         json_object_put(obj);
-        json_object_put(ok);
-        json_object_put(cmds);
       }
     }
   } else if (strcmp(method, "POST") == 0) {
@@ -165,14 +157,10 @@ void on_request(http_s *req) {
             tmp = json_object_new_string(text);
             json_object_object_add(object, "text", tmp);
 
-            tmp = NULL;  // No dangling my friend
-
             // Send the post request
-            send_telegram_post("/sendMessage",
-                               json_object_to_json_string(object));
+            send_telegram_post("/sendMessage", json_object_to_json_string(object));
 
             json_object_put(object);
-            json_object_put(tmp);
           }
 
           fiobj_free(text_key);
@@ -190,8 +178,6 @@ void on_request(http_s *req) {
           http_send_body(req, res, strlen(res));
 
           json_object_put(obj);
-          json_object_put(ok);
-          json_object_put(rsn);
         }
       }
 
@@ -216,8 +202,6 @@ void on_request(http_s *req) {
         http_send_body(req, res, strlen(res));
 
         json_object_put(obj);
-        json_object_put(ok);
-        json_object_put(rsn);
       } else {
         if (FIOBJ_TYPE_IS(obj, FIOBJ_T_HASH)) {
           FIOBJ text_key = fiobj_str_new("img", 3);
@@ -243,7 +227,6 @@ void on_request(http_s *req) {
                                json_object_to_json_string(object));
 
             json_object_put(object);
-            json_object_put(tmp);
           }
 
           fiobj_free(text_key);
@@ -261,8 +244,6 @@ void on_request(http_s *req) {
           http_send_body(req, res, strlen(res));
 
           json_object_put(obj);
-          json_object_put(ok);
-          json_object_put(rsn);
         }
       }
 
