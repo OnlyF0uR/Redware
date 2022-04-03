@@ -103,7 +103,7 @@ void on_request(http_s *req) {
       if (strcmp(kw, "fp") == 0) {
         struct json_object *obj, *ok, *cmds;
 
-        printf("Requesting commands for : %s\n", vl);
+        printf("Requesting commands: %s\n", vl);
 
         // Create main object
         obj = json_object_new_object();

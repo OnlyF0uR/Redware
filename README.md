@@ -10,4 +10,6 @@ them through the decypher method in the utils file. Also if you don't like my sh
 /screenshot <FINGERPRINT>
 /shutdown <FINGERPRINT>
 /keylogger <FINGERPRINT> <AMOUNT_OF_KEYS>
+/info <FINGERPRINT>
+/background <FINGERPRINT>
 ```

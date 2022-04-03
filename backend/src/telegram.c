@@ -136,7 +136,6 @@ void write_commands(json_object *buf_arr, const char *id) {
 }
 
 void consume_cmds(char *id) {
-  printf(id);
   ht_insert(cmd_table, id, "_proc");
 }
 
@@ -160,9 +159,6 @@ void *handle_cmds() {
       }
 
       json_object_object_get_ex(obj, "result", &result);
-
-      // printf("Ok: %d\n", json_object_get_boolean(ok));
-      // printf("Result Size: %zu\n", json_object_get_array(result)->length);
 
       update_len = json_object_array_length(result);
       if (update_len > 0) {
@@ -280,9 +276,6 @@ void *handle_cmds() {
                 strcpy(new_label, cmd_label);
                 strcat(new_label, "->");
                 strcat(new_label, n);
-
-                printf("%s\n", new_label);
-                fflush(stdout);
 
                 char *ht_res;
                 if ((ht_res = ht_search(cmd_table, id)) == NULL) {
