@@ -47,6 +47,16 @@ void free_item(HashItem *item) {
   free(item);
 }
 
+void consume(HashTable *table, char *key) {
+  int index = hash_func(key);
+  HashItem *item = table->items[index];
+  if (item != NULL) {
+    if (strcmp(item->key, key) == 0) {
+      free_item(item);
+    }
+  }
+}
+
 void free_table(HashTable *table) {
   for (int i = 0; i < table->size; i++) {
     HashItem *item = table->items[i];

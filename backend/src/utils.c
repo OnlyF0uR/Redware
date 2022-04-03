@@ -25,25 +25,3 @@ size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
 
   return realsize;
 }
-
-void proc_data_msg(int *chat_id, char *id) {
-  struct json_object *object, *tmp;
-
-  object = json_object_new_object();
-
-  tmp = json_object_new_int(*chat_id);
-  json_object_object_add(object, "chat_id", tmp);
-
-  // Manufacture the text
-  char text[29] = "Processing data from ";
-  strcat(text, id);
-  strcat(text, ":");
-
-  tmp = json_object_new_string(text);
-  json_object_object_add(object, "text", tmp);
-
-  // Send the post request
-  send_telegram_post("/sendMessage", json_object_to_json_string(object));
-
-  json_object_put(object);
-}

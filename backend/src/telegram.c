@@ -135,14 +135,6 @@ void write_commands(json_object *buf_arr, const char *id) {
   }
 }
 
-void consume_command(const char* id) {
-  for (int i = 0; i < cmd_table->size; i++) {
-    if (cmd_table->items[i]) {
-      free_item(cmd_table->items[i]);
-    }
-  }
-}
-
 void *handle_cmds() {
   while (!fio_is_running()) {
     sleep(1);

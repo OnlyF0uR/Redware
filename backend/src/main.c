@@ -113,8 +113,7 @@ void on_request(http_s *req) {
 
         // Write the commands to the object
         write_commands(cmds, vl);
-
-        // consume_command(vl);
+        consume(cmds, vl);
 
         json_object_object_add(obj, "ok", ok);
         json_object_object_add(obj, "cmds", cmds);
@@ -151,8 +150,10 @@ void on_request(http_s *req) {
           FIOBJ text_key = fiobj_str_new("text", 4);
           FIOBJ id_key = fiobj_str_new("fp", 2);
 
+          char *fp;
+
           if (fiobj_hash_get(obj, id_key)) {
-            char *fp = fiobj_obj2cstr(fiobj_hash_get(obj, id_key)).data;
+            fp = fiobj_obj2cstr(fiobj_hash_get(obj, id_key)).data;
             if (strlen(fp) != 6) {
               struct json_object *obj, *ok, *rsn;
 
@@ -169,8 +170,6 @@ void on_request(http_s *req) {
               json_object_put(obj);
               return;
             }
-
-            proc_data_msg(&chat_id, fp);
           }
 
           if (fiobj_hash_get(obj, text_key)) {
@@ -181,15 +180,27 @@ void on_request(http_s *req) {
             // ChatID
             tmp = json_object_new_int(chat_id);
             json_object_object_add(object, "chat_id", tmp);
+            
             // Text
             char *text = fiobj_obj2cstr(fiobj_hash_get(obj, text_key)).data;
-            tmp = json_object_new_string(text);
+            printf(fp);
+            char *msg = (char*) malloc((22 + 6 + 2 + 10 + strlen(text)) * sizeof(char));
+
+            strcpy(msg, "Processing data from ");
+            strcat(msg, fp);
+            strcat(msg, ":\n");
+            strcat(msg, text);
+
+            printf(msg);
+
+            tmp = json_object_new_string(msg);
             json_object_object_add(object, "text", tmp);
 
             // Send the post request
             send_telegram_post("/sendMessage", json_object_to_json_string(object));
 
             json_object_put(object);
+            // free(msg);
           }
 
           fiobj_free(text_key);
@@ -253,9 +264,27 @@ void on_request(http_s *req) {
               http_send_body(req, res, strlen(res));
 
               json_object_put(obj);
+              return;
             }
 
-            proc_data_msg(&chat_id, fp);
+            struct json_object *object, *tmp;
+            object = json_object_new_object();
+            
+            tmp = json_object_new_int(chat_id);
+            json_object_object_add(object, "chat_id", tmp);
+            
+            // Manufacture the text
+            char text[29] = "Processing data from ";
+            strcat(text, fp);
+            strcat(text, ":");
+            
+            tmp = json_object_new_string(text);
+            json_object_object_add(object, "text", tmp);
+            
+            // Send the post request
+            send_telegram_post("/sendMessage", json_object_to_json_string(object));
+            
+            json_object_put(object);
           }
 
           if (fiobj_hash_get(obj, img_key)) {
