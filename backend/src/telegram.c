@@ -71,6 +71,10 @@ void send_telegram_post(const char *ep, const char *data) {
   fflush(stdout);
 }
 
+void consume_cmds(char *vl) {
+  consume(cmd_table, vl);
+}
+
 void fetch_updates(json_object **buffer) {
   CURL *curl;
   CURLcode res;
