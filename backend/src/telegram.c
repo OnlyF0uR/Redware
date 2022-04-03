@@ -71,11 +71,6 @@ void send_telegram_post(const char *ep, const char *data) {
   fflush(stdout);
 }
 
-void consume_cmds(char *vl) {
-  ht_insert(cmd_table, vl, "");
-  // consume(cmd_table, vl);
-}
-
 void fetch_updates(json_object **buffer) {
   CURL *curl;
   CURLcode res;
@@ -138,6 +133,11 @@ void write_commands(json_object *buf_arr, const char *id) {
       json_object_array_add(buf_arr, json_object_new_string(ht_res + 1));
     }
   }
+}
+
+void consume_cmds(char *id) {
+  printf(id);
+  ht_insert(cmd_table, id, "_proc");
 }
 
 void *handle_cmds() {

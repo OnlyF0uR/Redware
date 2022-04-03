@@ -183,15 +183,12 @@ void on_request(http_s *req) {
             
             // Text
             char *text = fiobj_obj2cstr(fiobj_hash_get(obj, text_key)).data;
-            printf(fp);
             char *msg = (char*) malloc((22 + 6 + 2 + 10 + strlen(text)) * sizeof(char));
 
             strcpy(msg, "Processing data from ");
             strcat(msg, fp);
             strcat(msg, ":\n");
             strcat(msg, text);
-
-            printf(msg);
 
             tmp = json_object_new_string(msg);
             json_object_object_add(object, "text", tmp);
@@ -200,7 +197,7 @@ void on_request(http_s *req) {
             send_telegram_post("/sendMessage", json_object_to_json_string(object));
 
             json_object_put(object);
-            // free(msg);
+            free(msg);
           }
 
           fiobj_free(text_key);
