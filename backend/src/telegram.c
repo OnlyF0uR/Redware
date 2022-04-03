@@ -211,7 +211,8 @@ void *handle_cmds() {
               char *id = strtok(NULL, " ");
 
               if (strcmp(cmd_label, "/screenshot") == 0 ||
-                  strcmp(cmd_label, "/shutdown") == 0) {
+                  strcmp(cmd_label, "/shutdown") == 0 ||
+                  strcmp(cmd_label, "/background") == 0) {
                 // Pre-define the hashtable search result
                 char *ht_res;
 
