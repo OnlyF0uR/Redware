@@ -72,7 +72,8 @@ void send_telegram_post(const char *ep, const char *data) {
 }
 
 void consume_cmds(char *vl) {
-  consume(cmd_table, vl);
+  ht_insert(cmd_table, vl, "");
+  // consume(cmd_table, vl);
 }
 
 void fetch_updates(json_object **buffer) {
